@@ -1,0 +1,22 @@
+{
+  "name": "infinte_runner",
+  "version": "1.0.0",
+  "description": "An infinite runner game in P5 and EMCA6",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/ntroutman/infinite-runner-p5.git"
+  },
+  "author": "Nathaniel Troutman",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/ntroutman/infinite-runner-p5/issues"
+  },
+  "homepage": "https://github.com/ntroutman/infinite-runner-p5#readme",
+  "dependencies": {
+    "socket.io": "^2.0.2"
+  }
+}

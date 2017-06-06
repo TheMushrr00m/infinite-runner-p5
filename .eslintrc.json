@@ -1,0 +1,6 @@
+{    
+    "rules": {
+        "camelcase": "OFF",
+        "no-var": "OFF"
+    }
+}
