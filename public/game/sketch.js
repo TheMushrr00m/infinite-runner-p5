@@ -7,36 +7,20 @@
 var game = {
   state: GameState.GAME_START,
   runner: null,
-  gravity: 1.5,
+  gravity: 2.5,
   loop: true
 };
 
+var assets = {}
 
-class FloorGenerator {
-  constructor() {
-    this.first_floor = true
-  }
-
-  nextFloor() {
-    let floor = null
-    if (this.first_floor) {
-      this.first_floor = false
-      floor = createSprite(150, 250, 300, 50)
-    } else {
-      let w = random(10, 30) * 10
-      let h = 50
-      let x = this.last_floor.position.x + this.last_floor.width * .5
-      let y = this.last_floor.position.y + random(-5, 5) * 5
-      floor = createSprite(x + w * .5, y, w, h);
-    }
-
-    floor.immovable = true
-    floor.debug = true
-    floor.friction = 0.9
-
-    return this.last_floor = floor
-  }
+//it's advisable (but not necessary) to load the images in the preload function
+//of your sketch otherwise they may appear with a little delay
+function preload() {
+  //create an animation from a sequence of numbered images
+  assets['sky'] = loadImage("assets/sky_small_gradient.jpeg");
+  assets['ground'] = loadImage("assets/ground.png");
 }
+
 
 /**
  * P5 Setup
@@ -44,28 +28,19 @@ class FloorGenerator {
 function setup() {
   createCanvas(800, 400);
 
-  // the viewport is used for clipping the floors
-  viewport = createSprite(width*.5, height*.5, width*.75, height*.5)
-  viewport.shapeColor = color(255, 255, 255, 100)
-
   // the player character
-  game.runner = createSprite(10, 80, 20, 50);
-  game.runner.shapeColor = color(255, 5, 255, 255);
-  game.runner.maxSpeed = 15;
-  game.runner.debug = true
-  game.runner.JUMP_FORCE = 15
-  game.runner.RUN_SPEED = .5
+  game.runner = new Runner(game)
+
 
   //game.runner.friction = 1;
 
-  game.floorGenerator = new FloorGenerator()
-  game.floors = new Group()
+  game.floor_manager = new FloorManager(game)
   for (let i = 0; i < 10; i++) {
-      game.floors.add(game.floorGenerator.nextFloor())
+      game.floor_manager.nextFloor()
   }
 
   //camera.velocity = createVector()
-console.log(camera)
+  console.log(camera)
 }
 
 /**
@@ -76,75 +51,35 @@ function draw() {
 
   handleKeys();
 
-
-
   if (!game.loop) {
     return
   }
 
-  // Camera is centered at zero, zero on the canvas,
-  // so camera.x is width/2
-  //
-  for (let floor of game.floors) {
-    // left edge of the viewport
-    let camera_left = camera.position.x - (width * 0.5);
-    // right edge of the floor
-    let floor_right = floor.position.x + (floor.width * 0.5)
-
-    if (floor_right < camera_left ) {
-      floor.remove()
-      game.floors.add(game.floorGenerator.nextFloor())
-      console.log("Removed", {px: game.runner.position.x, camera_left: camera_left, floor_right: floor_right}, floor)
-    }
-  }
-
-  game.runner.on_floor = game.runner.collide(game.floors, (runner, floor) => runner.floor = floor)
-
-  if (!game.runner.on_floor) {
-    game.runner.addSpeed(game.gravity, 90);
-  } else {
-    // apply friction
-    if (game.runner.velocity.x > 0) {
-      game.runner.velocity.mult(game.runner.floor.friction);
-    } else {
-      game.runner.setVelocity(0, 0);
-    }
-  }
+  game.floor_manager.updateFloors(camera)
+  game.runner.update();
 
   // keep the camera and view point together with the player
   camera.position.x = game.runner.position.x + (width * .5) - 50
-  viewport.position.x = camera.position.x
+
+  image(assets['sky'], game.runner.position.x - 60, 0, width+10, height)
 
   drawSprites();
 
-  // draw debug info last
-  strokeWeight(2)
-  stroke(255)
-  line(game.runner.position.x, game.runner.position.y, game.runner.position.x+game.runner.velocity.x, game.runner.position.y + game.runner.velocity.y)
-  if (game.runner.on_floor) {
-    strokeWeight(0)
-    fill(0, 255, 0)
-    rect(game.runner.position.x - 5, game.runner.position.y + game.runner.height * .5, 10, 5 )
-  }
+
+
 
 }
 
 function handleKeys() {
   if (keyIsDown(RIGHT_ARROW)) {
-    // add run speed towards the right
-    game.runner.addSpeed(game.runner.RUN_SPEED, 0);
+    game.runner.run()
   }
 
   if (keyWentDown(' ')) {
-    game.runner.addSpeed(game.runner.JUMP_FORCE, -90)
+    game.runner.jump()
   }
 
   if (keyWentDown('t')) {
-    console.log("toggle")
-    if (game.loop) {
-      game.loop = false
-    } else {
-      game.loop = true
-    }
+    game.runner.auto_run = game.runner.auto_jump = (!game.runner.auto_run)
   }
 }
