@@ -4,7 +4,7 @@
   "description": "An infinite runner game in P5 and EMCA6",
   "main": "index.js",
   "scripts": {
-    "game": "babe-node ./server.js"
+    "game": "babel-node ./server.js"
   },
   "repository": {
     "type": "git",
@@ -16,10 +16,16 @@
     "url": "https://github.com/ntroutman/infinite-runner-p5/issues"
   },
   "homepage": "https://github.com/ntroutman/infinite-runner-p5#readme",
+  "babel": {
+    "presets": [
+      "es2015-node5"
+    ]
+  },
   "dependencies": {
     "socket.io": "^2.0.2",
     "tern-phaser": "^0.2.0",
     "babel-cli": "^6.24.1",
-    "babel-preset-es2015-node5": "^1.2.0"
+    "babel-preset-es2015-node5": "^1.2.0",
+    "livereload": "^0.6.2"
   }
 }
