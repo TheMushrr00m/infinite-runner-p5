@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="libs/phaser/phaser.min.js"></script>
+
+    <!--
+    <script src="game-phaser/floors.js"></script>
+    <script src="game-phaser/clouds.js"></script>
+    <script src="game-phaser/player.js"></script>
+    <script src="game-phaser/game.js"></script>
+    -->
+
+
+    <script>
+      System.import('game-phaser/game')
+
+      // live reloading
+      document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] +
+      ':35729/livereload.js?snipver=1"></' + 'script>')
+    </script>
+    <!--<link rel="stylesheet" type="text/css" href="style.css">-->
+  <style> body {padding: 0; margin: 0;} </style>
+  </head>
+  <body>
+  </body>
+</html>

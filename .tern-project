@@ -8,6 +8,7 @@
     "node_modules/**"
   ],
   "plugins": {
-    "doc_comment": true
+    "doc_comment": true,
+    "phaser": true
   }
 }

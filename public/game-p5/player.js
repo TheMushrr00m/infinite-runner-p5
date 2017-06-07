@@ -17,7 +17,7 @@ class Runner {
   update() {
     const game = this.game
     const runner = this.sprite
-    //this.on_floor = this.collide(game.floors, (runner, floor) => runner.floor = floor)
+    
     this.on_floor = false
     for (let floor of game.floor_manager.floors) {
       this.on_floor |= floor.overlapPoint(runner.position.x, runner.position.y + runner.height * .5 + runner.velocity.y + 2)
