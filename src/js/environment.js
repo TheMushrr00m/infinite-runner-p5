@@ -1,19 +1,18 @@
-class Environment {
-  constuctor(game) {
+export default class Environment {
+  constructor(game) {
     this.game = game;
   }
 
   preload(){
+    const game = this.game
     const image = function(name, filename) {
       if (filename === undefined) {
         filename = name
       }
 
-      this.game.image(name, 'assets/sunny-land/environment/' + filename + '.png')
+      game.load.image(name, 'assets/sunny-land/environment/' + filename + '.png')
     }
-    // ground
-    image('ground_1x1')
-
+      
     // backgrounds
     image('background', 'back');
     image('middleground', 'middle');
@@ -24,6 +23,8 @@ class Environment {
   }
 
   createBackgrounds() {
+    const game = this.game
+
     this.background = game.add.tileSprite(0, 0, this.game.width, this.game.height, 'background');
     this.middleground = game.add.tileSprite(0, 80, this.game.width, this.game.height, 'middleground');
     this.background.fixedToCamera = true;
