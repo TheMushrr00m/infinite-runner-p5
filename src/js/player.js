@@ -1,3 +1,5 @@
+import Level from './level';
+
 export default class Runner {
   constructor(game, level) {
     this.game = game
@@ -30,23 +32,25 @@ export default class Runner {
   }
 
   create() {
-    // Create a player sprite
-    // FIXME: BLOCK_SIZE is hardcoded here at 32, should be looked up from the level
-    this.sprite = this.game.add.sprite(100, this.game.height - (32 * 4), 'hero');
-    this.sprite.frame = 0;
-    this.sprite.debug = true;
-    this.sprite.smoothed = false;
-    this.sprite.anchor.set(0.5, 1);
+    // Create a player sprite    
+    this.sprite = this.game.add.sprite(100, this.game.height - (Level.BLOCK_SIZE * 4), 'hero');
+    let sprite = this.sprite
+    sprite.frame = 0;
+    sprite.debug = true;
+    sprite.smoothed = false;
+    sprite.anchor.set(0.5, 1);
 
     // Enable physics on the player
-    this.game.physics.enable(this.sprite, Phaser.Physics.ARCADE);
-    this.sprite.body.gravity.y = this.GRAVITY;
-    this.sprite.body.allowGravity = true;
+    this.game.physics.enable(sprite, Phaser.Physics.ARCADE);
+    let body = sprite.body
+    body.gravity.y = this.GRAVITY;
+    body.allowGravity = true;
+    body.setSize(56, 62, 13, 8);
 
     const columns = this.hero_animation.size.columns;
     for (let anim_name of Object.keys(this.hero_animation.animations)) {
       const anim = this.hero_animation.animations[anim_name];
-      this.sprite.animations.add(anim_name, anim.cols.map(idx => (anim.row * columns) + idx));
+      sprite.animations.add(anim_name, anim.cols.map(idx => (anim.row * columns) + idx));
     }
   }
 
@@ -68,6 +72,7 @@ export default class Runner {
   animate_idle() {
     if (this.is_grounded) {
       this.sprite.animations.play('idle', 4, true);
+      this.sprite.scale.set(1, 1);
     }
   }
 
@@ -92,14 +97,13 @@ export default class Runner {
   }
 
   right() {
-    // If the LEFT key is down, set the player velocity to move left
     this.sprite.body.velocity.x = this.RUN_SPEED;
     this.animate_walk();
   }
 
   run() {
     // add run speed towards the right
-    this.sprite.addSpeed(this.RUN_SPEED, 0);
+    this.left()
   }
 
   jump() {
@@ -111,7 +115,7 @@ export default class Runner {
 
   update() {
     const game = this.game
-    const runner = this.sprite
+    const body = this.sprite.body
 
     if (this.auto_run) {
       this.run()
@@ -125,7 +129,11 @@ export default class Runner {
       // }
     }
 
-    runner.velocity.x = min(runner.velocity.x, this.MAX_RUN_SPEED)
+    body.velocity.x = this.game.math.min(body.velocity.x, this.MAX_RUN_SPEED)
+
+    if (body.y > this.game.height) {
+      this.sprite.kill();
+    }
   }
 
 

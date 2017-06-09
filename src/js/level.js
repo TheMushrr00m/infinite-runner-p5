@@ -1,9 +1,12 @@
 export default class Level {
-  constructor(game) {
+//  static BLOCK_SIZE = 32;
+
+  constructor(game, block_buffer) {
     this.game = game
     this.first_floor = true;
-    this.BLOCK_SIZE = 32;
     this.chunks = []
+    this.block_buffer = block_buffer;
+    console.log("Kevek", Level.BLOCK_SIZE)
   }
 
   preload(){
@@ -21,11 +24,10 @@ export default class Level {
   }
 
   create() {
-    this.world_width = this.game.width / this.BLOCK_SIZE
-    this.world_height = this.game.height / this.BLOCK_SIZE
+    this.world_width = this.game.width / Level.BLOCK_SIZE
+    this.world_height = this.game.height / Level.BLOCK_SIZE
     this.blocks = this.game.add.group()
     this.blocks.name = 'blocks'
-
   }
 
   interact(player) {
@@ -46,7 +48,7 @@ export default class Level {
       w = this.game.rnd.integerInRange(2, 5)
       x = this.last_chunk.right_edge
       //y = constrain(this.last_chunk.floor_y + random(-3, 3), , height)
-      y = this.game.math.clamp(this.last_chunk.stop_floor + this.game.rnd.integerInRange(-3, 3), 0, this.world_height);
+      y = this.game.math.clamp(this.last_chunk.stop_floor + this.game.rnd.integerInRange(-3, 3), 0, this.world_height - 4);
       chunk = this.chunk_levelGround(x, y, w);
     }
 
@@ -80,8 +82,8 @@ export default class Level {
     // // Get the first dead missile from the missileGroup
     let block = this.blocks.getFirstDead();
 
-    x = x * this.BLOCK_SIZE
-    y = this.game.height - (y * this.BLOCK_SIZE)
+    x = x * Level.BLOCK_SIZE
+    y = this.game.height - (y * Level.BLOCK_SIZE)
 
     // If there aren't any available, create a new one
     if (block === null) {
@@ -100,20 +102,28 @@ export default class Level {
     return block;
   }
 
-  updateBlocks(camera) {
-    return
+
+
+  updateBlocks() {
+
+    const camera_left = this.game.camera.x
+
     // Camera is centered at zero, zero on the canvas,
     // so camera.x is width / 2
-    for (let floor of this.blocks) {
-      // left edge of the viewport
-      let camera_left = camera.position.x - (width * 0.5);
-      // right edge of the floor
-      let floor_right = floor.position.x + (floor.width * 0.5)
-
-      if (floor_right < camera_left ) {
-        floor.remove()
-        this.nextFloor()
+    for (let i = this.chunks.length - 1; i >= 0; i--) {
+      const chunk = this.chunks[i]
+      if ((chunk.right_edge + 1) * Level.BLOCK_SIZE < camera_left ) {
+        console.log("Removed", chunk);
+        chunk.blocks.forEach(block => block.kill())
+        this.chunks.splice(i, 1);
       }
+    }
+
+    // generate enough chunks to keep the requried off screen buffer full
+    const min_block_edge = this.game.math.ceilTo((this.game.camera.x + this.game.camera.width) / Level.BLOCK_SIZE) + this.block_buffer
+    while ( this.chunks[this.chunks.length - 1].right_edge < min_block_edge) {
+      this.nextChunk()
     }
   }
 }
+Level.BLOCK_SIZE = 32;

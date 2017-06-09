@@ -8,6 +8,10 @@ class GameState {
   constructor(game) {
     this.game = game;
     this.modules = []
+
+    this.enable_player_debug = false;
+
+    this.CAMERA_X_OFFSET = 100
   }
 
   addModule(module) {
@@ -22,9 +26,9 @@ class GameState {
     //this.scale.setScreenSize(true);
 
 
-    this.environment = this.addModule(new Environment(game));
-    this.player = this.addModule(new Player(game));
-    this.level = this.addModule(new Level(game));
+    this.environment = this.addModule(new Environment(this.game));
+    this.level = this.addModule(new Level(this.game, -5));
+    this.player = this.addModule(new Player(this.game, this.level));
   }
 
   // Load images and sounds
@@ -42,8 +46,7 @@ class GameState {
 
     for(;;) {
       let chunk = this.level.nextChunk();
-      console.log(chunk.left_edge , this.level.world_width,chunk.left_edge > this.level.world_width)
-      if (chunk.left_edge > this.level.world_width) {
+      if (chunk.left_edge > this.level.world_width - 5) {
         return;
       }
     }
@@ -51,25 +54,67 @@ class GameState {
 
   // The update() method is called every frame
   update() {
-      this.level.interact(this.player);
-      this.level.updateBlocks(this.player);
+    this.modules.forEach(module => { if (module.update !== undefined) module.update(); });
+
+    if (!this.player.sprite.alive) {
+      game.state.restart('game')
+    }
+
+    this.handleNonPlayerKeys()
+
+    this.level.interact(this.player);
+    this.level.updateBlocks(this.player);
 
 
-      if (this.leftInputIsActive) {
-        this.player.left();
-      } else if (this.rightInputIsActive) {
-        this.player.right()
-        //this.level.blocks.addAll('body.position.x', -10);
-      } else {
-        this.player.stand();
+    if (this.rightInputIsActive) {
+      this.player.right()
+    }
+    // else if (this.leftInputIsActive) {
+    //   this.player.left();
+    // }
+    else {
+      this.player.stand();
+    }
+
+    if (this.jumpInputIsActive) {
+      this.player.jump();
+    }
+
+    //
+    // slide the world along, this prevents us from needing an infinitely large
+    // world to scroll infinitely
+    //
+    this.wrapWorld()
+
+    //this.game.camera.follow(this.player.sprite)
+    this.game.camera.x = this.player.sprite.body.position.x - this.CAMERA_X_OFFSET
+  }
+
+  wrapWorld() {
+    const wrap_offset_x = (this.game.math.ceilTo(this.game.width / Level.BLOCK_SIZE) + 5) * Level.BLOCK_SIZE
+    let pbody = this.player.sprite.body
+
+    // We use 300px of buffer so that when we slide everything over the camera doesn't hit the world bounds,
+    // the camera's x cannot be less than 0
+    if (pbody.position.x > wrap_offset_x + 300) {
+
+    }
+  }
+
+  handleNonPlayerKeys() {
+    if (this.input.keyboard.downDuration(Phaser.Keyboard.D, 1)) {
+      this.enable_player_debug = !this.enable_player_debug;
+      if (!this.enable_player_debug) {
+        this.game.debug.reset();
       }
+    }
+  }
 
-      if (this.jumpInputIsActive) {
-        this.player.jump();
-      }
-
-      this.game.camera.follow(this.player.sprite)
-      //this.game.camera.x = this.player.sprite.x
+  render() {
+    if (this.enable_player_debug) {
+      this.game.debug.bodyInfo(this.player.sprite, 32, 32);
+      this.game.debug.body(this.player.sprite);
+    }
   }
 
   bindKeys() {
@@ -81,7 +126,8 @@ class GameState {
         Phaser.Keyboard.RIGHT,
         Phaser.Keyboard.UP,
         Phaser.Keyboard.DOWN,
-        Phaser.Keyboard.SPACEBAR
+        Phaser.Keyboard.SPACEBAR,
+        Phaser.Keyboard.D
     ]);
   }
 
