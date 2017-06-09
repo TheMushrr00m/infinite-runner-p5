@@ -54,8 +54,6 @@ class GameState {
 
   // The update() method is called every frame
   update() {
-    this.modules.forEach(module => { if (module.update !== undefined) module.update(); });
-
     if (!this.player.sprite.alive) {
       game.state.restart('game')
     }
@@ -66,19 +64,25 @@ class GameState {
     this.level.updateBlocks(this.player);
 
 
-    if (this.rightInputIsActive) {
-      this.player.right()
-    }
-    // else if (this.leftInputIsActive) {
-    //   this.player.left();
-    // }
-    else {
-      this.player.stand();
+    if (!this.player.auto_run) {
+      if (this.rightInputIsActive) {
+        this.player.right()
+      }
+      // else if (this.leftInputIsActive) {
+      //   this.player.left();
+      // }
+      else {
+        this.player.stand();
+      }
     }
 
-    if (this.jumpInputIsActive) {
-      this.player.jump();
-    }
+//    if (!this.player.auto_jump) {
+      if (this.jumpInputIsActive) {
+        this.player.jump();
+      }
+    //}
+
+    this.player.update();
 
     //
     // slide the world along, this prevents us from needing an infinitely large
@@ -91,13 +95,17 @@ class GameState {
   }
 
   wrapWorld() {
-    const wrap_offset_x = (this.game.math.ceilTo(this.game.width / Level.BLOCK_SIZE) + 5) * Level.BLOCK_SIZE
+    const slide_in_blocks = 40
+    const slide_in_pixel = Level.BLOCK_SIZE * slide_in_blocks
     let pbody = this.player.sprite.body
 
     // We use 300px of buffer so that when we slide everything over the camera doesn't hit the world bounds,
     // the camera's x cannot be less than 0
-    if (pbody.position.x > wrap_offset_x + 300) {
-
+    if (pbody.position.x > slide_in_pixel + 300) {
+      let px = pbody.position.x
+      let pnx = px - (slide_in_pixel - pbody.deltaX());
+      pbody.position.x = pnx
+      this.level.slideBlocks(slide_in_blocks)
     }
   }
 

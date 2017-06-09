@@ -32,7 +32,7 @@ export default class Runner {
   }
 
   create() {
-    // Create a player sprite    
+    // Create a player sprite
     this.sprite = this.game.add.sprite(100, this.game.height - (Level.BLOCK_SIZE * 4), 'hero');
     let sprite = this.sprite
     sprite.frame = 0;
@@ -103,7 +103,7 @@ export default class Runner {
 
   run() {
     // add run speed towards the right
-    this.left()
+    this.right()
   }
 
   jump() {

@@ -20,7 +20,11 @@ export default class Level {
     }
     // ground
     image('ground_middle_1x1');
+    image('ground_cliff_left_1x1');
+    image('ground_cliff_right_1x1');
     image('underground_1x1');
+    image('underground_right_edge_1x1');
+    image('underground_left_edge_1x1');
   }
 
   create() {
@@ -71,14 +75,30 @@ export default class Level {
    */
   chunk_levelGround(x, y, w) {
     let chunk_blocks = []
-    for (let i = x; i < x + w; i++) {
-      chunk_blocks.push(this.newBlock(i, y));
+
+
+    for (let i = x + 1; i < x + w - 1; i++) {
+      chunk_blocks.push(this.newBlock(i, y, 'ground_middle_1x1'));
+    }
+    chunk_blocks.push(this.newBlock(x, y, 'ground_cliff_left_1x1'));
+    chunk_blocks.push(this.newBlock(x + w - 1, y, 'ground_cliff_right_1x1'));
+
+    if (false) {
+      for (let j = y - 1; j >= 0; j--) {
+        chunk_blocks.push(this.newBlock(j, x, 'underground_right_edge_1x1'));
+        chunk_blocks.push(this.newBlock(j, x + w - 1, 'underground_left_edge_1x1'));
+      }
+      for (let i = x + 1; i < x + w - 1; i++) {
+        for (let j = y - 1; j >= 0; j--) {
+          chunk_blocks.push(this.newBlock(i, j, 'underground_1x1'));
+        }
+      }
     }
 
     return {blocks: chunk_blocks, left_edge: x, right_edge: x + w, start_floor: y, stop_floor: y }
   }
 
-  newBlock(x, y) {
+  newBlock(x, y, type) {
     // // Get the first dead missile from the missileGroup
     let block = this.blocks.getFirstDead();
 
@@ -87,7 +107,7 @@ export default class Level {
 
     // If there aren't any available, create a new one
     if (block === null) {
-        block = this.game.add.sprite(x, y, 'ground_middle_1x1');
+        block = this.game.add.sprite(x, y, type);
         block.anchor.set(0, 1);
         block.scale.set(2);
         this.game.physics.enable(block, Phaser.Physics.ARCADE);
@@ -97,16 +117,27 @@ export default class Level {
         this.blocks.add(block);
     } else {
       block.reset(x, y)
+      block.key = type;
     }
 
     return block;
   }
 
 
+  slideBlocks(num_blocks) {
+      // slide each block's sprite over
+      this.blocks.forEach((sprite) => sprite.body.position.x -= (num_blocks * Level.BLOCK_SIZE - sprite.body.deltaX()), this);
+      // update all the chunks too
+      this.chunks.forEach((chunk) => {
+        chunk.left_edge -= num_blocks;
+        chunk.right_edge -= num_blocks;
+      })
+  }
 
   updateBlocks() {
-
     const camera_left = this.game.camera.x
+
+    // we need to negate the upcoming velocity change
 
     // Camera is centered at zero, zero on the canvas,
     // so camera.x is width / 2
