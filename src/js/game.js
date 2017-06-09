@@ -12,6 +12,7 @@ class GameState {
     this.enable_player_debug = false;
 
     this.CAMERA_X_OFFSET = 100
+    window.game = this
   }
 
   addModule(module) {
@@ -27,7 +28,7 @@ class GameState {
 
 
     this.environment = this.addModule(new Environment(this.game));
-    this.level = this.addModule(new Level(this.game, -5));
+    this.level = this.addModule(new Level(this.game, 5));
     this.player = this.addModule(new Player(this.game, this.level));
   }
 
@@ -66,7 +67,7 @@ class GameState {
 
     if (!this.player.auto_run) {
       if (this.rightInputIsActive) {
-        this.player.right()
+        this.player.right();
       }
       // else if (this.leftInputIsActive) {
       //   this.player.left();
@@ -101,7 +102,8 @@ class GameState {
 
     // We use 300px of buffer so that when we slide everything over the camera doesn't hit the world bounds,
     // the camera's x cannot be less than 0
-    if (pbody.position.x > slide_in_pixel + 300) {
+    if (pbody.position.x > slide_in_pixel +  Level.BLOCK_SIZE * 5) {
+      console.log("Wrapped!")
       let px = pbody.position.x
       let pnx = px - (slide_in_pixel - pbody.deltaX());
       pbody.position.x = pnx
@@ -115,6 +117,10 @@ class GameState {
       if (!this.enable_player_debug) {
         this.game.debug.reset();
       }
+    }
+
+    if (this.input.keyboard.downDuration(Phaser.Keyboard.P, 1)) {
+      game.paused = true;
     }
   }
 
@@ -135,7 +141,8 @@ class GameState {
         Phaser.Keyboard.UP,
         Phaser.Keyboard.DOWN,
         Phaser.Keyboard.SPACEBAR,
-        Phaser.Keyboard.D
+        Phaser.Keyboard.D,
+        Phaser.Keyboard.P
     ]);
   }
 
@@ -178,5 +185,5 @@ class GameState {
   }
 }
 
-var game = new Phaser.Game(848, 450, Phaser.AUTO, 'game');
+var game = new Phaser.Game(Level.BLOCK_SIZE * 35, Level.BLOCK_SIZE * 13, Phaser.AUTO, 'game');
 game.state.add('game', GameState, true);

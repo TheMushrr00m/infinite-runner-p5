@@ -6,7 +6,6 @@ export default class Level {
     this.first_floor = true;
     this.chunks = []
     this.block_buffer = block_buffer;
-    console.log("Kevek", Level.BLOCK_SIZE)
   }
 
   preload(){
@@ -19,12 +18,14 @@ export default class Level {
       game.load.image(name, 'assets/sunny-land/environment/' + filename + '.png')
     }
     // ground
-    image('ground_middle_1x1');
-    image('ground_cliff_left_1x1');
-    image('ground_cliff_right_1x1');
-    image('underground_1x1');
-    image('underground_right_edge_1x1');
-    image('underground_left_edge_1x1');
+    // image('ground_middle_1x1');
+    // image('ground_cliff_left_1x1');
+    // image('ground_cliff_right_1x1');
+    // image('underground_1x1');
+    // image('underground_right_edge_1x1');
+    // image('underground_left_edge_1x1');
+
+    game.load.atlasJSONHash('environment', 'assets/sunny-land/environment/environment.png', 'assets/sunny-land/environment/environment.json');
   }
 
   create() {
@@ -107,7 +108,8 @@ export default class Level {
 
     // If there aren't any available, create a new one
     if (block === null) {
-        block = this.game.add.sprite(x, y, type);
+        block = this.game.add.sprite(x, y, 'environment');
+        block.frameName = type;
         block.anchor.set(0, 1);
         block.scale.set(2);
         this.game.physics.enable(block, Phaser.Physics.ARCADE);
@@ -117,10 +119,18 @@ export default class Level {
         this.blocks.add(block);
     } else {
       block.reset(x, y)
-      block.key = type;
+      block.frameName = type;
     }
 
     return block;
+  }
+
+  toBlockCoords(position) {
+    return [this.game.math.ceilTo(position.x / Level.BLOCK_SIZE), this.world_height - this.game.math.ceilTo(position.y / Level.BLOCK_SIZE)]
+  }
+
+  getBlockAt(x, y) {
+    return this.game.physics.arcade.getObjectsAtLocation(x * Level.BLOCK_SIZE, this.game.height - y * Level.BLOCK_SIZE, this.blocks)[0];
   }
 
 
