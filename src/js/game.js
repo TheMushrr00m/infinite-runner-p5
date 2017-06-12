@@ -3,6 +3,7 @@ import 'babel-polyfill';
 import Environment from './environment';
 import Player from './player';
 import Level from './level';
+//import Level from './TilemapExample';
 
 class GameState {
   constructor(game) {
@@ -13,6 +14,8 @@ class GameState {
 
     this.CAMERA_X_OFFSET = 100
     window.game = this
+
+    console.log(Level);
   }
 
   addModule(module) {
@@ -29,12 +32,14 @@ class GameState {
 
     this.environment = this.addModule(new Environment(this.game));
     this.level = this.addModule(new Level(this.game, 5));
+    //this.level = this.addModule(new TilemapExample(this.game, 5));
     this.player = this.addModule(new Player(this.game, this.level));
   }
 
   // Load images and sounds
   preload() {
     this.modules.forEach(module => { if (module.preload !== undefined) module.preload(); });
+    //this.game.stage.disableVisibilityChange = true;
   }
 
   // Setup the example
@@ -45,12 +50,17 @@ class GameState {
     this.modules.forEach(module => { if (module.create !== undefined) module.create(); });
     this.bindKeys();
 
+    // this.level.chunk_levelGround(0, 3, 7);
+    // this.level.chunk_levelGround(8, 5, 5);
+    // this.level.chunk_levelGround(13, 2, 5);
+    // this.level.chunk_pit(19, 4, 2);
     for(;;) {
       let chunk = this.level.nextChunk();
-      if (chunk.left_edge > this.level.world_width - 5) {
+      if (chunk.right_edge > this.level.world_width - 5) {
         return;
       }
     }
+    console.log("Done creating game...")
   }
 
   // The update() method is called every frame
@@ -77,11 +87,13 @@ class GameState {
       }
     }
 
-//    if (!this.player.auto_jump) {
-      if (this.jumpInputIsActive) {
-        this.player.jump();
-      }
-    //}
+    if (this.jumpInputIsActive) {
+      this.player.jump();
+    }
+
+    if (this.shootInputIsActive) {
+      this.player.shoot();
+    }
 
     this.player.update();
 
@@ -105,8 +117,10 @@ class GameState {
     if (pbody.position.x > slide_in_pixel +  Level.BLOCK_SIZE * 5) {
       console.log("Wrapped!")
       let px = pbody.position.x
-      let pnx = px - (slide_in_pixel - pbody.deltaX());
+      let delta_x = (slide_in_pixel - pbody.deltaX());
+      let pnx = px - delta_x;
       pbody.position.x = pnx
+      this.player.bullets.addAll('body.position.x', -delta_x);
       this.level.slideBlocks(slide_in_blocks)
     }
   }
@@ -121,6 +135,12 @@ class GameState {
 
     if (this.input.keyboard.downDuration(Phaser.Keyboard.P, 1)) {
       game.paused = true;
+    }
+    if (this.input.keyboard.downDuration(Phaser.Keyboard.R, 1)) {
+      this.player.auto_run = !this.player.auto_run;
+    }
+    if (this.input.keyboard.downDuration(Phaser.Keyboard.J, 1)) {
+      this.player.auto_jump = !this.player.auto_jump;
     }
   }
 
@@ -141,16 +161,27 @@ class GameState {
         Phaser.Keyboard.UP,
         Phaser.Keyboard.DOWN,
         Phaser.Keyboard.SPACEBAR,
+        Phaser.Keyboard.SHIFT,
         Phaser.Keyboard.D,
-        Phaser.Keyboard.P
+        Phaser.Keyboard.P,
+        Phaser.Keyboard.J,
+        Phaser.Keyboard.R
     ]);
+  }
+
+  get shootInputIsActive() {
+    let isActive = false;
+
+    isActive = this.input.keyboard.downDuration(Phaser.Keyboard.SHIFT, 5);
+
+    return isActive;
   }
 
   // This function should return true when the player activates the "jump" control
   // In this case, either holding the right arrow or tapping or clicking on the left
   // side of the screen.
   get jumpInputIsActive() {
-      var isActive = false;
+      let isActive = false;
 
       isActive = this.input.keyboard.downDuration(Phaser.Keyboard.SPACEBAR, 5);
       isActive |= this.input.keyboard.downDuration(Phaser.Keyboard.UP, 5);
@@ -162,7 +193,7 @@ class GameState {
   // In this case, either holding the right arrow or tapping or clicking on the left
   // side of the screen.
   get leftInputIsActive() {
-      var isActive = false;
+      let isActive = false;
 
       isActive = this.input.keyboard.isDown(Phaser.Keyboard.LEFT);
       isActive |= (this.game.input.activePointer.isDown &&
@@ -175,7 +206,7 @@ class GameState {
   // In this case, either holding the right arrow or tapping or clicking on the right
   // side of the screen.
   get rightInputIsActive() {
-      var isActive = false;
+      let isActive = false;
 
       isActive = this.input.keyboard.isDown(Phaser.Keyboard.RIGHT);
       isActive |= (this.game.input.activePointer.isDown &&

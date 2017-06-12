@@ -6,26 +6,12 @@ export default class Level {
     this.first_floor = true;
     this.chunks = []
     this.block_buffer = block_buffer;
+    //this.last_chunk = {type: 'none'}
+    this.chunks.push({type: 'none', stop_floor: 0})
   }
 
   preload(){
-    const game = this.game
-    const image = function(name, filename) {
-      if (filename === undefined) {
-        filename = name
-      }
-
-      game.load.image(name, 'assets/sunny-land/environment/' + filename + '.png')
-    }
-    // ground
-    // image('ground_middle_1x1');
-    // image('ground_cliff_left_1x1');
-    // image('ground_cliff_right_1x1');
-    // image('underground_1x1');
-    // image('underground_right_edge_1x1');
-    // image('underground_left_edge_1x1');
-
-    game.load.atlasJSONHash('environment', 'assets/sunny-land/environment/environment.png', 'assets/sunny-land/environment/environment.json');
+    this.game.load.atlasJSONHash('terrain', 'assets/terrain.png', 'assets/terrain.json');
   }
 
   create() {
@@ -37,7 +23,8 @@ export default class Level {
 
   interact(player) {
     // Collide the player with the ground
-    this.game.physics.arcade.collide(player.sprite, this.blocks, () => player.is_grounded = true);
+    this.game.physics.arcade.collide(player.sprite, this.blocks);
+    this.game.physics.arcade.collide(player.bullets, this.blocks, (bullet, blocks) => bullet.kill());
   }
 
   nextChunk() {
@@ -45,20 +32,24 @@ export default class Level {
 
     if (this.first_floor) {
       this.first_floor = false;
-      x = -1;
-      y = 3;
-      w = 7;
-      chunk = this.chunk_levelGround(x, y, w);
-    } else {
-      w = this.game.rnd.integerInRange(2, 5)
-      x = this.last_chunk.right_edge
-      //y = constrain(this.last_chunk.floor_y + random(-3, 3), , height)
-      y = this.game.math.clamp(this.last_chunk.stop_floor + this.game.rnd.integerInRange(-3, 3), 0, this.world_height - 4);
-      chunk = this.chunk_levelGround(x, y, w);
+      this.chunks = [{type: 'none', stop_floor: 3}]
+      return this.chunk_levelGround(0, 3, 5);
     }
 
-    this.chunks.push(chunk)
-    return this.last_chunk = chunk
+
+    x = this.last_chunk.right_edge + 1
+    let next_type = this.game.rnd.frac()
+    if (next_type < .5) {
+      chunk = this.chunk_levelGround(x);
+    } else {
+      chunk = this.chunk_pit(x);
+    }
+
+    return chunk
+  }
+
+  get last_chunk() {
+    return this.chunks[this.chunks.length - 1]
   }
 
   /*
@@ -75,28 +66,117 @@ export default class Level {
    * All the different chunk types:
    */
   chunk_levelGround(x, y, w) {
-    let chunk_blocks = []
+    const chunk_blocks = []
+    const last_y = this.last_chunk.stop_floor
 
-
-    for (let i = x + 1; i < x + w - 1; i++) {
-      chunk_blocks.push(this.newBlock(i, y, 'ground_middle_1x1'));
+    if (y === undefined) {
+      y = this.game.math.clamp(last_y + this.game.rnd.integerInRange(-3, 3), 0, this.world_height - 4);
     }
-    chunk_blocks.push(this.newBlock(x, y, 'ground_cliff_left_1x1'));
-    chunk_blocks.push(this.newBlock(x + w - 1, y, 'ground_cliff_right_1x1'));
+    if (w === undefined) {
+      w = this.game.rnd.integerInRange(2, 5)
+    }
+    console.log('level', x, y, w)
 
-    if (false) {
-      for (let j = y - 1; j >= 0; j--) {
-        chunk_blocks.push(this.newBlock(j, x, 'underground_right_edge_1x1'));
-        chunk_blocks.push(this.newBlock(j, x + w - 1, 'underground_left_edge_1x1'));
-      }
-      for (let i = x + 1; i < x + w - 1; i++) {
-        for (let j = y - 1; j >= 0; j--) {
-          chunk_blocks.push(this.newBlock(i, j, 'underground_1x1'));
-        }
-      }
+
+    const this_is_lower = last_y > y
+    const this_is_higher = last_y < y
+    const delta_y = this.game.math.difference(last_y, y)
+    if (this_is_higher) {
+      this.verticle_line(chunk_blocks, last_y, y, x,
+        'stone_left_to_underground_1x1', 'underground_left_edge_1x1', 'ground_cliff_left_1x1')
+      this.horizontal_line(chunk_blocks, x + 1, x + w, y, 'ground_middle_1x1')
+      this.fill(chunk_blocks, x + 1, 0, x + w, y - 1, 'underground_1x1')
+      this.fill(chunk_blocks, x, 0, x, last_y - 1, 'underground_1x1')
+    } else if (this_is_lower) {
+      this.verticle_line(chunk_blocks, last_y, y, x,
+        'stone_right_to_underground_1x1', 'underground_right_edge_1x1', 'ground_cliff_right_1x1')
+      this.horizontal_line(chunk_blocks, x + 1, x + w, y, 'ground_middle_1x1')
+      this.fill(chunk_blocks, x, 0, x + w, y - 1, 'underground_1x1')
+    } else { // level with the other block
+      this.horizontal_line(chunk_blocks, x, x + w, y, 'ground_middle_1x1')
+      this.fill(chunk_blocks, x, 0, x + w, y - 1, 'underground_1x1')
     }
 
-    return {blocks: chunk_blocks, left_edge: x, right_edge: x + w, start_floor: y, stop_floor: y }
+    let chunk = {type:'level_ground', blocks: chunk_blocks, left_edge: x, right_edge: x + w, start_floor: y, stop_floor: y }
+    this.chunks.push(chunk)
+    return chunk
+  }
+
+  chunk_pit(x, y, w) {
+    const chunk_blocks = []
+    const last_y = this.last_chunk.stop_floor
+
+    if (y === undefined) {
+      y = this.game.math.clamp(last_y + this.game.rnd.integerInRange(-6, 2), 1, this.world_height - 4);
+    }
+    if (w === undefined) {
+      w = this.game.rnd.integerInRange(3, 5)
+    }
+    console.log('pit', x, y, w)
+
+    // left edge
+    this.verticle_line(chunk_blocks, 0, last_y, x,
+      'underground_right_edge_1x1', 'underground_right_edge_1x1', 'ground_cliff_right_1x1')
+
+    // pit
+    // -- its just empty
+
+    // right edge
+    this.verticle_line(chunk_blocks, 0, y, x + w,
+      'underground_left_edge_1x1', 'underground_left_edge_1x1', 'ground_cliff_left_1x1')
+
+    let chunk = {type:'level_ground', blocks: chunk_blocks, left_edge: x, right_edge: x + w, start_floor: y, stop_floor: y }
+    this.chunks.push(chunk)
+    return chunk
+  }
+
+  horizontal_line(blocks, start_x, end_x, y, start_type, middle_type, end_type) {
+    if (middle_type === undefined) {
+      middle_type = end_type = start_type
+    }
+    let type = null;
+    for (let x = start_x; x <= end_x; x++) {
+      if (x == end_x) {
+        type = end_type
+      } else if (x == start_x) {
+        type = start_type
+      } else {
+        type = middle_type
+      }
+      blocks.push(this.newBlock(x, y, type));
+    }
+  }
+
+  verticle_line(blocks, start_y, end_y, x, start_type, middle_type, end_type) {
+    if (middle_type === undefined) {
+      middle_type = end_type = start_type
+    }
+    let type = null;
+    if (end_y < start_y) {
+      let tmp = start_y
+      start_y = end_y
+      end_y = tmp
+    }
+    for (let y = start_y; y <= end_y; y++) {
+      if (y == end_y) {
+        type = end_type
+      } else if (y == start_y) {
+        type = start_type
+      } else {
+        type = middle_type
+      }
+      blocks.push(this.newBlock(x, y, type));
+    }
+  }
+
+  fill(blocks, start_x, start_y, end_x, end_y, type) {
+    // const end_x = start_x + w
+    // const end_y = start_y + h
+    for (let x = start_x; x <= end_x; x++) {
+      for (let y = start_y; y <= end_y; y++) {
+        blocks.push(this.newBlock(x, y, type));
+      }
+    }
   }
 
   newBlock(x, y, type) {
@@ -108,7 +188,7 @@ export default class Level {
 
     // If there aren't any available, create a new one
     if (block === null) {
-        block = this.game.add.sprite(x, y, 'environment');
+        block = this.game.add.sprite(x, y, 'terrain');
         block.frameName = type;
         block.anchor.set(0, 1);
         block.scale.set(2);
@@ -125,8 +205,8 @@ export default class Level {
     return block;
   }
 
-  toBlockCoords(position) {
-    return [this.game.math.ceilTo(position.x / Level.BLOCK_SIZE), this.world_height - this.game.math.ceilTo(position.y / Level.BLOCK_SIZE)]
+  toBlockCoords(x, y) {
+    return [this.game.math.ceilTo(x / Level.BLOCK_SIZE), this.world_height - this.game.math.ceilTo(y / Level.BLOCK_SIZE)]
   }
 
   getBlockAt(x, y) {
@@ -168,3 +248,4 @@ export default class Level {
   }
 }
 Level.BLOCK_SIZE = 32;
+//

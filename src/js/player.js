@@ -8,9 +8,9 @@ export default class Runner {
     this.JUMP_FORCE = 600
     this.RUN_SPEED = 200;
     this.MAX_RUN_SPEED = 500;
+    this.BULLET_SPEED = 800;
 
-    this.auto_run = true;
-    this.auto_jump = true;
+    this.auto_run = this.auto_jump= false;
 
     this.level = level;
   }
@@ -30,6 +30,7 @@ export default class Runner {
       }
     }
     this.game.load.spritesheet('hero', 'assets/hero_spritesheet.png', 82, 72, 40);
+    this.game.load.image('bullet', 'assets/bullet.png', 16, 16);
   }
 
   create() {
@@ -53,6 +54,8 @@ export default class Runner {
       const anim = this.hero_animation.animations[anim_name];
       sprite.animations.add(anim_name, anim.cols.map(idx => (anim.row * columns) + idx));
     }
+
+    this.bullets = this.game.add.group()//undefined, 'bullets', true, Phaser.Physics.ARCADE);
   }
 
   /*
@@ -69,7 +72,7 @@ export default class Runner {
 
     if (body.touching.down) {
       if (body.velocity.x > 0) {
-          this.sprite.animations.play('walk', 10, true);
+          this.sprite.animations.play('walk_shoot', 10, true);
       } else {
         this.sprite.animations.play('idle', 4, true);
       }
@@ -137,10 +140,30 @@ export default class Runner {
   }
 
   jump() {
-    if (this.is_grounded) {
+    if (this.sprite.body.touching.down) {
       this.sprite.body.velocity.y = -this.JUMP_FORCE;
       //this.animate_jump()
     }
+  }
+
+  shoot() {
+    // let bullet = this.bullets.getFirstDead(true,
+    //     this.sprite.body.position.x + 55, this.sprite.body.position.y + 5,
+    //     'bullet');
+    let bullet = this.bullets.getFirstDead()
+    const body = this.sprite.body;
+    const x = body.position.x + 55, y = body.position.y + 10
+    if (!bullet) {
+      bullet = this.game.add.sprite(x, y, 'bullet');
+      this.game.physics.enable(bullet, Phaser.Physics.ARCADE);
+      bullet.body.allowGravity = false;
+      bullet.smoothed = false;
+      this.bullets.add(bullet);
+    } else {
+      bullet.reset(x, y)
+    }
+    bullet.body.velocity.x = this.BULLET_SPEED
+    console.log(bullet);
   }
 
   update() {
@@ -165,9 +188,9 @@ export default class Runner {
   }
 
   do_auto_jump() {
-    let [px, py] = this.level.toBlockCoords(this.sprite.body);
+    let [px, py] = this.level.toBlockCoords(this.sprite.body.position.x - .5  * Level.BLOCK_SIZE, this.sprite.body.position.y);
     // if there is a hole in the ground in front of the player
-    for (let x = px + 3; x > px; x--) {
+    for (let x = px + 1; x > px; x--) {
       if (this.level.getBlockAt(x, py - 1) === undefined) {
         this.jump();
         return;

@@ -4,18 +4,8 @@ export default class Environment {
   }
 
   preload(){
-    const game = this.game
-    const image = function(name, filename) {
-      if (filename === undefined) {
-        filename = name
-      }
-
-      game.load.image(name, 'assets/sunny-land/environment/' + filename + '.png')
-    }
-      
-    // backgrounds
-    image('background', 'back');
-    image('middleground', 'middle');
+    this.game.load.image('background', 'assets/background.png');
+    this.game.load.image('middleground', 'assets/middleground.png');
   }
 
   create() {

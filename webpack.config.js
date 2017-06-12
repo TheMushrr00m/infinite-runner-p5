@@ -18,7 +18,8 @@ module.exports = {
         filename: 'bundle.js'
     },
     devServer: {
-        contentBase: dir_build,
+        contentBase: dir_build
+        //, host: 'f45c899e7b05.ant.amazon.com'
     },
     module: {
         loaders: [
