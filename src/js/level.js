@@ -14,11 +14,10 @@ export default class Level {
     this.game.load.atlasJSONHash('terrain', 'assets/terrain.png', 'assets/terrain.json');
   }
 
-  create() {
+  create(level_group) {
     this.world_width = this.game.width / Level.BLOCK_SIZE
     this.world_height = this.game.height / Level.BLOCK_SIZE
-    this.blocks = this.game.add.group()
-    this.blocks.name = 'blocks'
+    this.blocks = this.game.add.group(level_group, 'blocks')    
   }
 
   interact(player) {

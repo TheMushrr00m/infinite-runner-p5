@@ -33,9 +33,13 @@ export default class Runner {
     this.game.load.image('bullet', 'assets/bullet.png', 16, 16);
   }
 
-  create() {
+  create(entities) {
     // Create a player sprite
+    //this.sprite = entities.create(100, this.game.height - (Level.BLOCK_SIZE * 4), 'hero');
     this.sprite = this.game.add.sprite(100, this.game.height - (Level.BLOCK_SIZE * 4), 'hero');
+    //entities.add(this.sprite)
+
+    //.add(this.sprite)
     let sprite = this.sprite
     sprite.frame = 0;
     sprite.debug = true;
@@ -55,7 +59,7 @@ export default class Runner {
       sprite.animations.add(anim_name, anim.cols.map(idx => (anim.row * columns) + idx));
     }
 
-    this.bullets = this.game.add.group()//undefined, 'bullets', true, Phaser.Physics.ARCADE);
+    this.bullets = this.game.add.group(entities, 'bullets', false, Phaser.Physics.ARCADE);
   }
 
   /*
@@ -150,20 +154,19 @@ export default class Runner {
     // let bullet = this.bullets.getFirstDead(true,
     //     this.sprite.body.position.x + 55, this.sprite.body.position.y + 5,
     //     'bullet');
+
     let bullet = this.bullets.getFirstDead()
     const body = this.sprite.body;
     const x = body.position.x + 55, y = body.position.y + 10
     if (!bullet) {
-      bullet = this.game.add.sprite(x, y, 'bullet');
+      bullet = this.bullets.create(x, y, 'bullet');
       this.game.physics.enable(bullet, Phaser.Physics.ARCADE);
       bullet.body.allowGravity = false;
       bullet.smoothed = false;
-      this.bullets.add(bullet);
     } else {
       bullet.reset(x, y)
     }
     bullet.body.velocity.x = this.BULLET_SPEED
-    console.log(bullet);
   }
 
   update() {
@@ -178,11 +181,19 @@ export default class Runner {
       this.do_auto_jump()
     }
 
-    //body.velocity.x = this.game.math.min(body.velocity.x, this.MAX_RUN_SPEED)
-
+    // Kill the player if he drops bellow the level
     if (body.y > this.game.height) {
       this.sprite.kill();
     }
+
+    // clean up bullets that have gone to far off screen
+    this.bullets.forEachAlive((bullet) => {
+      // use a little bit of a buffer before removing it
+      if (bullet.body.position.x > this.game.camera.x + this.game.camera.width + 100) {
+         bullet.kill()
+         console.log("killed", bullet)
+      }
+    })
 
     this.animate()
   }

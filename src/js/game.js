@@ -47,7 +47,19 @@ class GameState {
     // technically not infinite....just really really big
     this.game.world.setBounds(0, 0, 3500, this.game.height);
 
-    this.modules.forEach(module => { if (module.create !== undefined) module.create(); });
+    // this group is used to track all environment objects (non-collided backgrounds)
+    this.environment_group = this.game.add.group(this.game.world, 'environment')
+
+    // this group is used to track all level objets
+    this.level_group = this.game.add.group(this.game.world, 'level')
+
+    // this group is used to track all objects not updated by the level
+    this.entities = this.game.add.group(this.game.world, 'entities')
+
+    this.environment.create(this.environment_group)
+    this.level.create(this.level_group)
+    this.player.create(this.entities)
+
     this.bindKeys();
 
     // this.level.chunk_levelGround(0, 3, 7);
@@ -57,10 +69,13 @@ class GameState {
     for(;;) {
       let chunk = this.level.nextChunk();
       if (chunk.right_edge > this.level.world_width - 5) {
-        return;
+        break;
       }
     }
     console.log("Done creating game...")
+    console.log(this.environment_group, this.level_group, this.entities)
+    this.entities.name = 'entities'
+    this.entities.add(this.player.sprite)
   }
 
   // The update() method is called every frame
@@ -120,7 +135,7 @@ class GameState {
       let delta_x = (slide_in_pixel - pbody.deltaX());
       let pnx = px - delta_x;
       pbody.position.x = pnx
-      this.player.bullets.addAll('body.position.x', -delta_x);
+      this.player.entities.setAllChildren('body.position.x', -delta_x, true, false, 1);
       this.level.slideBlocks(slide_in_blocks)
     }
   }
