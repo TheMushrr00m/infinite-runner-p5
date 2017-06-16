@@ -6,7 +6,7 @@ export default class Runner {
     //this.sprite.debug = true
     this.GRAVITY = 1800;
     this.JUMP_FORCE = 600
-    this.RUN_SPEED = 200;
+    this.RUN_SPEED = 250;
     this.MAX_RUN_SPEED = 500;
     this.BULLET_SPEED = 800;
 

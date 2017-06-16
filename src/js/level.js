@@ -17,7 +17,7 @@ export default class Level {
   create(level_group) {
     this.world_width = this.game.width / Level.BLOCK_SIZE
     this.world_height = this.game.height / Level.BLOCK_SIZE
-    this.blocks = this.game.add.group(level_group, 'blocks')    
+    this.blocks = this.game.add.group(level_group, 'blocks')
   }
 
   interact(player) {
@@ -38,7 +38,7 @@ export default class Level {
 
     x = this.last_chunk.right_edge + 1
     let next_type = this.game.rnd.frac()
-    if (next_type < .5) {
+    if (next_type < .7) {
       chunk = this.chunk_levelGround(x);
     } else {
       chunk = this.chunk_pit(x);
@@ -72,7 +72,7 @@ export default class Level {
       y = this.game.math.clamp(last_y + this.game.rnd.integerInRange(-3, 3), 0, this.world_height - 4);
     }
     if (w === undefined) {
-      w = this.game.rnd.integerInRange(2, 5)
+      w = this.game.rnd.integerInRange(3, 6)
     }
     console.log('level', x, y, w)
 
@@ -109,7 +109,7 @@ export default class Level {
       y = this.game.math.clamp(last_y + this.game.rnd.integerInRange(-6, 2), 1, this.world_height - 4);
     }
     if (w === undefined) {
-      w = this.game.rnd.integerInRange(3, 5)
+      w = this.game.rnd.integerInRange(4, 7)
     }
     console.log('pit', x, y, w)
 
@@ -121,8 +121,11 @@ export default class Level {
     // -- its just empty
 
     // right edge
-    this.verticle_line(chunk_blocks, 0, y, x + w,
+    this.verticle_line(chunk_blocks, 0, y, x + w - 1,
       'underground_left_edge_1x1', 'underground_left_edge_1x1', 'ground_cliff_left_1x1')
+    this.verticle_line(chunk_blocks, 0, y, x + w,
+      'underground_1x1', 'underground_1x1', 'ground_middle_1x1')
+
 
     let chunk = {type:'level_ground', blocks: chunk_blocks, left_edge: x, right_edge: x + w, start_floor: y, stop_floor: y }
     this.chunks.push(chunk)

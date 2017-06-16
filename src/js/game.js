@@ -14,8 +14,6 @@ class GameState {
 
     this.CAMERA_X_OFFSET = 100
     window.game = this
-
-    console.log(Level);
   }
 
   addModule(module) {
@@ -44,6 +42,7 @@ class GameState {
 
   // Setup the example
   create() {
+
     // technically not infinite....just really really big
     this.game.world.setBounds(0, 0, 3500, this.game.height);
 
@@ -76,6 +75,13 @@ class GameState {
     console.log(this.environment_group, this.level_group, this.entities)
     this.entities.name = 'entities'
     this.entities.add(this.player.sprite)
+
+    this.ui_group = this.game.add.group()
+    //this.ui_group.fixedToCamera = true
+
+    this.distanceUI = this.game.add.text(5, 5, 'Distance: 0', this.ui_group)
+    this.distanceUI.fixedToCamera = true
+    this.total_distance = 0
   }
 
   // The update() method is called every frame
@@ -93,11 +99,7 @@ class GameState {
     if (!this.player.auto_run) {
       if (this.rightInputIsActive) {
         this.player.right();
-      }
-      // else if (this.leftInputIsActive) {
-      //   this.player.left();
-      // }
-      else {
+      } else {
         this.player.stand();
       }
     }
@@ -120,6 +122,14 @@ class GameState {
 
     //this.game.camera.follow(this.player.sprite)
     this.game.camera.x = this.player.sprite.body.position.x - this.CAMERA_X_OFFSET
+
+    this.total_distance +=  this.game.math.floorTo(this.player.sprite.body.deltaX())
+    // we devide the pixel distance to give something that feels "right"
+    this.distanceUI.text = "Distance: " +  this.game.math.floorTo(this.total_distance / 20.0)
+  }
+
+  render() {
+
   }
 
   wrapWorld() {
@@ -135,7 +145,12 @@ class GameState {
       let delta_x = (slide_in_pixel - pbody.deltaX());
       let pnx = px - delta_x;
       pbody.position.x = pnx
-      this.player.entities.setAllChildren('body.position.x', -delta_x, true, false, 1);
+
+      // we just moved the player and the physics engine is going to notice
+      // it and change deltaX which will confuse the distance calculations
+      this.total_distance += this.game.math.ceilTo(delta_x)
+
+      //this.entities.setAllChildren('body.position.x', -delta_x, true, false, 1);
       this.level.slideBlocks(slide_in_blocks)
     }
   }
